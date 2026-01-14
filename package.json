@@ -1,0 +1,32 @@
+{
+  "name": "gmap-extractor",
+  "version": "1.0.0",
+  "description": "Extract business data from Google Maps search results",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "extract": "node src/index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "bin": {
+    "gmap-extract": "./src/index.js"
+  },
+  "keywords": [
+    "google-maps",
+    "scraper",
+    "data-extraction",
+    "puppeteer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.11.0",
+    "commander": "^11.1.0",
+    "fast-csv": "^5.0.1",
+    "cli-progress": "^3.12.0",
+    "chalk": "^5.3.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}

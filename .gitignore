@@ -1,0 +1,9 @@
+node_modules/
+output/*.csv
+output/*.json
+*.log
+.env
+.DS_Store
+*.tmp
+.vscode/
+.idea/
