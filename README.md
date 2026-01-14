@@ -282,10 +282,6 @@ Google Maps' HTML structure may change over time, which could affect the tool's 
 
 Feel free to submit issues, suggestions, or pull requests to improve this tool.
 
-## License
-
-MIT License - Feel free to use and modify for your needs.
-
 ## Disclaimer
 
 This tool is not affiliated with Google. Use responsibly and in accordance with applicable laws and terms of service.
