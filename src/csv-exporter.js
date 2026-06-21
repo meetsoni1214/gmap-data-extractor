@@ -2,7 +2,7 @@ import { writeToPath } from "@fast-csv/format";
 import path from "path";
 import fs from "fs";
 import { CONFIG } from "./config.js";
-import { generateOutputFilename, log } from "./utils.js";
+import { dedupeBusinesses, generateOutputFilename, log } from "./utils.js";
 
 export class CSVExporter {
   constructor(outputDir = CONFIG.export.outputDir) {
@@ -26,7 +26,13 @@ export class CSVExporter {
     const filepath = path.join(this.outputDir, filename);
 
     try {
-      log(`Exporting ${data.length} records to CSV...`);
+      const { unique, duplicates } = dedupeBusinesses(data);
+
+      if (duplicates.length > 0) {
+        log(`Removed ${duplicates.length} duplicate records before CSV export`, "warning");
+      }
+
+      log(`Exporting ${unique.length} records to CSV...`);
 
       const headers = [
         "Business Name",
@@ -42,7 +48,7 @@ export class CSVExporter {
         "Google Maps URL",
       ];
 
-      const rows = data.map((business) => [
+      const rows = unique.map((business) => [
         business.name || "N/A",
         business.category || "N/A",
         business.address || "N/A",
@@ -84,13 +90,19 @@ export class CSVExporter {
     const filepath = path.join(this.outputDir, filename);
 
     try {
-      log(`Exporting ${data.length} records to JSON...`);
+      const { unique, duplicates } = dedupeBusinesses(data);
+
+      if (duplicates.length > 0) {
+        log(`Removed ${duplicates.length} duplicate records before JSON export`, "warning");
+      }
+
+      log(`Exporting ${unique.length} records to JSON...`);
 
       const jsonData = {
         query: query,
         exportDate: new Date().toISOString(),
-        totalResults: data.length,
-        results: data,
+        totalResults: unique.length,
+        results: unique,
       };
 
       fs.writeFileSync(filepath, JSON.stringify(jsonData, null, 2), "utf-8");
@@ -103,9 +115,10 @@ export class CSVExporter {
     }
   }
 
-  generateSummaryReport(data, errors = []) {
+  generateSummaryReport(data, errors = [], duplicateCount = 0) {
     const summary = {
       totalExtracted: data.length,
+      totalDuplicatesSkipped: duplicateCount,
       totalErrors: errors.length,
       successRate:
         data.length > 0
@@ -150,6 +163,7 @@ export class CSVExporter {
     console.log("EXTRACTION SUMMARY");
     console.log("=".repeat(50));
     console.log(`Total Records Extracted: ${summary.totalExtracted}`);
+    console.log(`Duplicate Records Skipped: ${summary.totalDuplicatesSkipped}`);
     console.log(`Total Errors: ${summary.totalErrors}`);
     console.log(`Success Rate: ${summary.successRate}`);
     console.log("\nField Completion Rates:");

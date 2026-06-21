@@ -88,3 +88,74 @@ export function extractPriceLevel(priceText) {
   const match = priceText.match(/(\$+)/);
   return match ? match[1] : null;
 }
+
+export function normalizeBusinessValue(value) {
+  if (!value || value === 'N/A') return '';
+
+  return String(value)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/^[^a-z0-9]+/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+export function normalizePhoneValue(value) {
+  if (!value || value === 'N/A') return '';
+
+  return String(value).replace(/[^\d+]/g, '');
+}
+
+export function normalizeBusinessUrl(value) {
+  if (!value || value === 'N/A') return '';
+
+  try {
+    const url = new URL(value);
+    url.search = '';
+    url.hash = '';
+    return url.toString().toLowerCase();
+  } catch (error) {
+    return normalizeBusinessValue(value);
+  }
+}
+
+export function getBusinessDedupeKey(business) {
+  if (!business) return null;
+
+  const name = normalizeBusinessValue(business.name);
+  const address = normalizeBusinessValue(business.address);
+  const phone = normalizePhoneValue(business.phone);
+  const plusCode = normalizeBusinessValue(business.plusCode);
+  const url = normalizeBusinessUrl(business.url);
+
+  if (name && address) return `name-address:${name}|${address}`;
+  if (name && phone) return `name-phone:${name}|${phone}`;
+  if (name && plusCode) return `name-plus-code:${name}|${plusCode}`;
+  if (url) return `url:${url}`;
+
+  return null;
+}
+
+export function dedupeBusinesses(businesses) {
+  const seen = new Set();
+  const unique = [];
+  const duplicates = [];
+
+  businesses.forEach((business, index) => {
+    const key = getBusinessDedupeKey(business);
+
+    if (key && seen.has(key)) {
+      duplicates.push({ index, business, key });
+      return;
+    }
+
+    if (key) {
+      seen.add(key);
+    }
+
+    unique.push(business);
+  });
+
+  return { unique, duplicates };
+}
+

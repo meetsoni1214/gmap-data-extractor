@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { CONFIG, buildGoogleMapsSearchUrl, getRandomUserAgent } from './config.js';
-import { log, delay, waitForElement } from './utils.js';
+import { log, delay, waitForElement, normalizeBusinessUrl } from './utils.js';
 
 puppeteer.use(StealthPlugin());
 
@@ -132,9 +132,27 @@ export class GoogleMapsScraper {
         return extractedLinks;
       }, CONFIG.selectors.businessCard, CONFIG.selectors.businessLink);
 
+      const uniqueLinks = [];
+      const seenLinks = new Set();
+
+      links.forEach((link) => {
+        const normalizedLink = normalizeBusinessUrl(link);
+
+        if (!normalizedLink || seenLinks.has(normalizedLink)) {
+          return;
+        }
+
+        seenLinks.add(normalizedLink);
+        uniqueLinks.push(link);
+      });
+
       const limitedLinks = this.maxResults 
-        ? links.slice(0, this.maxResults) 
-        : links;
+        ? uniqueLinks.slice(0, this.maxResults) 
+        : uniqueLinks;
+
+      if (links.length !== uniqueLinks.length) {
+        log(`Removed ${links.length - uniqueLinks.length} duplicate business links`, 'warning');
+      }
 
       log(`Extracted ${limitedLinks.length} business links`, 'success');
       return limitedLinks;

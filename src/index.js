@@ -7,7 +7,7 @@ import { GoogleMapsScraper } from './scraper.js';
 import { BusinessDataExtractor } from './extractor.js';
 import { CSVExporter } from './csv-exporter.js';
 import { ErrorHandler, handleUncaughtErrors, setupGracefulShutdown } from './error-handler.js';
-import { log } from './utils.js';
+import { getBusinessDedupeKey, log } from './utils.js';
 
 handleUncaughtErrors();
 
@@ -73,6 +73,8 @@ program
 
       const extractor = new BusinessDataExtractor(scraper.page);
       const businesses = [];
+      const seenBusinesses = new Set();
+      let duplicateCount = 0;
       const errors = [];
 
       for (let i = 0; i < resultsToExtract; i++) {
@@ -98,7 +100,18 @@ program
           );
           
           if (businessData) {
-            businesses.push(businessData);
+            const dedupeKey = getBusinessDedupeKey(businessData);
+
+            if (dedupeKey && seenBusinesses.has(dedupeKey)) {
+              duplicateCount++;
+              log(`Skipping duplicate business: ${businessData.name || `Result ${i + 1}`}`, 'warning');
+            } else {
+              if (dedupeKey) {
+                seenBusinesses.add(dedupeKey);
+              }
+
+              businesses.push(businessData);
+            }
           } else {
             errors.push({ index: i, error: 'Failed to extract data' });
           }
@@ -120,7 +133,7 @@ program
       }
 
       const exporter = new CSVExporter();
-      const summary = exporter.generateSummaryReport(businesses, errors);
+      const summary = exporter.generateSummaryReport(businesses, errors, duplicateCount);
 
       if (format === 'csv' || format === 'both') {
         const csvFile = await exporter.exportToCSV(businesses, query, options.output);
